@@ -91,8 +91,59 @@ for i in a6:
     if i != '\n':
         a2 += i
 
-inputList = list(a1.split(' '))
-exampList = list(a2.split(' '))
+b3 = '''
+for i = 0 to n do 
+begin 
+s := 10 ; 
+end ; 
+while i < 7 do 
+begin 
+s := 10 ; 
+end ;'''
+
+# НЦ и КЦ - начало и конец условного оператора
+b4 = '''
+i 0 = n to do for 
+НЦ 
+s 10 := 
+КЦ 
+i 7 < do while 
+НЦ 
+s 10 := 
+КЦ'''
+
+b5 = '''
+W21 I0 O7 N0 W19 I1 W20 R11  
+W11 R11 
+I2 O8 N1 R4 R11 
+W16 R4 R11 
+W18 I0 O5 N2 W20 R11 
+W11 R11 
+I2 O8 N1 R4 R11 
+W16 R4 R11'''
+
+b1 = ''
+for i in b5:
+    if i != '\n':
+        b1 += i
+
+b6 = '''
+I0 N0 O7 I1 W19 W20 W21 
+НЦ 
+I2 N1 O8 
+КЦ 
+I0 N2 O5 W20 W18 
+НЦ 
+I2 N1 O8 
+КЦ'''
+
+b2 = ''
+for i in b6:
+    if i != '\n':
+        b2 += i
+
+inputList = list(b1.split(' '))
+exampList = list(b2.split(' '))
 
 stack = []
 outputList = []
@@ -120,7 +171,7 @@ BP = 'БП'
 isGOTO = False
 
 w = ['W0', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12', 'W13', 'W14', 'W15', 'W16', 'W17',
-     'W18']
+     'W18', 'W19', 'W20', 'W21']
 separator = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11']
 operators = ['O0', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O7', 'O8', 'O9', 'O10']
 isProgram = False
@@ -133,7 +184,10 @@ isOpenBracket = False
 isSemicolon = False
 isProcActive = False
 isFuncActive = False
+isBeginForWhile = False
 isBeginProcFunc = False
+isFor = False
+isWhile = False
 isBody = False
 isEND = False
 typeCounter = 0  # счетчик операндов
@@ -203,31 +257,7 @@ for i in inputList:
     # ]
     if i == 'R8':
         print('-  ]  -')
-        n = len(stack)
-        for j in range(0, n):
-            print(stack[-1])
-            print('out  ', outputList)
-            print('stack', stack)
-            print('prior', priorityList)
-            print()
-            if stack[-1] != 'R1':
-                del priorityList[-1]
-                outputList.append(stack[-1])
-                del stack[-1]
-            else:
-                print(',')
-                del priorityList[-1]
-                del stack[-1]
-                print('out  ', outputList)
-                print('stack', stack)
-                print('prior', priorityList)
-                print()
-                break
-            print('out  ', outputList)
-            print('stack', stack)
-            print('prior', priorityList)
-            print()
-
+        outputList, stack, priorityList = outputUntil(['R1'], outputList, stack, priorityList)
         outputList.append(AM)
         AM = '2АЭМ'
         isBracket = False
@@ -260,6 +290,33 @@ for i in inputList:
         outputList.append(BP)
         outputList.append(M1)
         outputList.append('R3')
+
+    # for
+    if i == 'W21':
+        isFor = True
+        stack.append('W21')
+        priorityList.append(0)
+
+    # while
+    if i == 'W18':
+        isWhile = True
+        stack.append('W18')
+        priorityList.append(0)
+
+    # to
+    if i == 'W19':
+        outputList, stack, priorityList = outputUntil(['W21'], outputList, stack, priorityList)
+
+    # do
+    if i == 'W20':
+        if isFor:
+            outputList.append('W19')
+            outputList.append('W20')
+            outputList.append('W21')
+        if isWhile:
+            outputList, stack, priorityList = outputUntil(['W18'], outputList, stack, priorityList)
+            outputList.append('W20')
+            outputList.append('W18')
 
     # ;
     if i == 'R4':
@@ -333,14 +390,22 @@ for i in inputList:
             print('isEnd:', isEND)
             if isBeginProcFunc:
                 print('isBeginProcFunc:', isBeginProcFunc)
+                isBeginProcFunc = False
                 isEND = False
                 print('isFuncActive:', isFuncActive)
                 if isFuncActive:
                     outputList.append('КФ')
                     isFuncActive = False
                 elif isProcActive:
-                    isProcActive = False
                     outputList.append('КП')
+                    isProcActive = False
+            if isBeginForWhile:
+                isBeginForWhile = False
+                outputList.append('КЦ')
+                if isFor:
+                    isFor = False
+                if isWhile:
+                    isFor = False
 
     # program
     if i == 'W0':
@@ -369,6 +434,9 @@ for i in inputList:
     if i == 'W11':
         if isProcActive or isFuncActive:
             isBeginProcFunc = True
+        if isFor or isWhile:
+            isBeginForWhile = True
+            outputList.append('НЦ')
 
     # GOTO
     if i == 'W12':
@@ -416,7 +484,7 @@ for i in inputList:
         isEND = True
 
     # begin (body)
-    if i == 'W11' and not isProcActive and not isFuncActive and not isIF:
+    if i == 'W11' and not isProcActive and not isFuncActive and not isIF and not isFor and not isWhile:
         isBody = True
         outputList.append('НТ')
 

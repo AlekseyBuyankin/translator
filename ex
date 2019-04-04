@@ -109,11 +109,11 @@ b4 = '''
 i 0 = n to do for 
 НФР 
 s 10 := 
-НФР 
+КФР 1 
 i 7 < do while 
-КФР 
+КВЛ 
 s 10 := 
-КФР'''
+КВЛ 1'''
 
 b5 = '''
 W21 I0 O7 N0 W19 I1 W20 R11  
@@ -134,11 +134,11 @@ b6 = '''
 I0 N0 O7 I1 W19 W20 W21 
 НФР 
 I2 N1 O8 
-КФР 
+КФР 1 
 I0 N2 O5 W20 W18 
-НФР 
+НВЛ 
 I2 N1 O8 
-КФР'''
+КВЛ 1'''
 
 b2 = ''
 for i in b6:
@@ -232,9 +232,8 @@ c2 = ''
 for i in c6:
     if i != '\n':
         c2 += i
-
-inputList = list(a1.split(' '))
-exampList = list(a2.split(' '))
+inputList = list(c1.split(' '))
+exampList = list(c2.split(' '))
 
 stack = []
 outputList = []
@@ -387,7 +386,8 @@ for i in inputList:
                 print('prior', priorityList)
                 print()
                 del priorityList[-1]
-                outputList.append(stack[-1])
+                if stack[-1] != 'W14':
+                    outputList.append(stack[-1])
                 del stack[-1]
                 print('out  ', outputList)
                 print('stack', stack)
@@ -535,8 +535,9 @@ for i in inputList:
 
     # else
     if i == 'W15':
-        # isElse = True
-        del isNowIfForWhile[-1]
+        if len(isNowIfForWhile) != 0:
+            if isNowIfForWhile[-1] == 'if':
+                del isNowIfForWhile[-1]
         isNowIfForWhile.append('else')
         outputList, stack, priorityList = outputUntil(['W14'], outputList, stack, priorityList)
         stack.append(i)

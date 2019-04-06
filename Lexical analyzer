@@ -1,0 +1,268 @@
+import re
+import string
+from defs4La import *
+
+code = open('code.txt', 'r')
+correctAnswer = open('correctAnswer.txt', 'r')
+
+codeList = []
+answerList = []
+
+for i in code.readlines():
+    codeList.append(i.strip(''))
+
+for line in correctAnswer.readlines():
+    answerList.append(line.strip(''))
+
+print('ans', answerList)
+inputList = []
+for i in answerList:
+    s = ''
+    for j in i:
+        if s == 'R11':
+            inputList.append('R11')
+            inputList.append('\n')
+        if j != ' ':
+            s += j
+        else:
+            inputList.append(s)
+            s = ''
+
+    if i == answerList[-1]:
+        inputList.append(s)
+
+a = []
+for i in inputList:
+    a.append(i.replace('\t', ''))
+inputList = a
+
+code.close()
+correctAnswer.close()
+
+print(codeList)
+print(inputList)
+
+outputList = []
+
+R = [' ', ',', '.', ':', ';', '(', ')', '[', ']', '{', '}']
+r = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11']
+O = ['+', '-', '*', '/', '^', '<', '>', '=', ':=', '<>', '<=', '>=']
+W = ['program', 'var', 'const', 'integer', 'real', 'string', 'label', 'array', 'of', 'procedure', 'function', 'begin',
+     'goto', 'if', 'then', 'else', 'end', 'end.', 'for', 'to', 'do', 'while', '"', "'"]
+
+isLetterAndNumber = '[a-zA-Z0-9]'.format(re.escape(string.punctuation))
+isNumberAndSymbol = '[0-9Ee.+-]'.format(re.escape(string.punctuation))
+isNumber = '[0-9]'.format(re.escape(string.punctuation))
+
+# isExp = '[E.+-] * [0-9]'.format(re.escape(string.punctuation))
+
+counterI = 0  # счетчик переменных
+counterS = 0  # счетчик string
+counterN = 0  # счетчик цифр
+IList = []
+NList = []
+SList = []
+
+isProgram = False
+for i in codeList:
+    print('i', i)
+    m = i
+
+    s = ''
+    wait = 0
+    for j in i:
+        print()
+        print('- i ->', i)
+        print('- j ->', j)
+        ex = ''
+        exList = []
+        for k in range(0, len(outputList)):
+            if outputList[k] != 'R11':
+                if k != len(outputList) - 1:
+                    ex += outputList[k] + ' '
+                else:
+                    ex += outputList[k]
+            else:
+                ex += outputList[k] + ' '
+        exList = list(ex.split(' '))
+        print('Выход: ', exList)
+        print('Ответ: ', inputList)
+        print('')
+        if wait == 0:
+            if not j in R and not j in O:
+                s += j
+                if isProgram and (j == '"' or j == "'"):  # чтоб не было второй ковычки
+                    s = s[0: len(s) - 1]
+
+            print('- s ->', s)
+
+            if i == 'else\n':
+                print('i = else')
+
+            if s in W:
+                s, isProgram, outputList = plusWordIfSisW(i, s, '"', '', isProgram, outputList)
+                s, isProgram, outputList = plusWordIfSisW(i, s, "'", '', isProgram, outputList)
+                s, isProgram, outputList = plusWordIfSisW(i, s, 'program', 'W0', isProgram, outputList)
+                s, outputList = ifSisW(s, 'var', 'W1', outputList)
+                s, outputList = ifSisW(s, 'const', 'W2', outputList)
+                s, outputList = ifSisW(s, 'integer', 'W3', outputList)
+                s, outputList = ifSisW(s, 'real', 'W4', outputList)
+                s, outputList = ifSisW(s, 'string', 'W5', outputList)
+                s, outputList = ifSisW(s, 'label', 'W6', outputList)
+                s, outputList = ifSisW(s, 'array', 'W7', outputList)
+                s, outputList = ifSisW(s, 'of', 'W8', outputList)
+                s, outputList = ifSisW(s, 'procedure', 'W9', outputList)
+                s, outputList = ifSisW(s, 'function', 'W10', outputList)
+                s, outputList = ifSisW(s, 'begin', 'W11', outputList)
+                s, outputList = ifSisW(s, 'goto', 'W12', outputList)
+                s, outputList = ifSisW(s, 'if', 'W13', outputList)
+                s, outputList = ifSisW(s, 'then', 'W14', outputList)
+                s, outputList = ifSisW(s, 'else', 'W15', outputList)
+                if s == 'end':
+                    if i[i.index('d', 0, len(i)) + 1] != '.':
+                        s, outputList = ifSisW(s, 'end', 'W16', outputList)
+                    else:
+                        s += '.'
+                        s, outputList = ifSisW(s, 'end.', 'W17', outputList)
+                        wait = 1
+                s, outputList = ifSisW(s, 'while', 'W18', outputList)
+                s, outputList = ifSisW(s, 'to', 'W19', outputList)
+                s, outputList = ifSisW(s, 'do', 'W20', outputList)
+                s, outputList = ifSisW(s, 'for', 'W21', outputList)
+
+            # True если операция состоит из нескольких символов IList, NList, SList
+            if j in R:
+                print(i)
+                print(i[1:4], 'to ')
+                print(i[1:3], 'do')
+                if i[1:3] == 'do':
+                    print(i.index('o', 0, len(i)), len(i))
+                if j == ' ' and i[1:4] == 'to ' or i[1:3] == 'do' and i.index('o', 0, len(i)) + 1 == len(i) - 1:
+                    print('YESYESYEYSEYYSEYSEYYEYESYEYESYES')
+                    s, IList, NList, SList, counterI, counterN, outputList = \
+                        ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, ' ', '', outputList)
+                s, IList, NList, SList, counterI, counterN, outputList = \
+                    ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, ',', 'R1', outputList)
+
+                if re.match(isNumberAndSymbol, s) and j == '.' and i[i.index('.', 0, len(i)) + 1] != '.':
+                    s += '.'
+                    print('-----------------------', s)
+                elif j == '.' and re.match(isNumber, i[i.index('.', 0, len(i)) + 1]):
+                    print('privet')
+                    s += '.'
+                else:
+                    s, IList, NList, SList, counterI, counterN, outputList, wait = \
+                        multiIfRorOthenOutput(i, j, s, wait, IList, NList, SList, counterI, counterN, '.', ['..'], '',
+                                              ['R2'], outputList)
+
+                s, IList, NList, SList, counterI, counterN, outputList, wait = \
+                    multiIfRorOthenOutput(i, j, s, wait, IList, NList, SList, counterI, counterN, ':', [':='], 'R3',
+                                          ['O8'], outputList)
+
+                s, IList, NList, SList, counterI, counterN, counterS, isProgram, outputList = \
+                    plusWordIfRorOthenOutput(j, s, IList, NList, SList, counterI, counterN, counterS, isProgram, ';',
+                                             'R4', outputList)
+
+                s, IList, NList, SList, counterI, counterN, outputList = \
+                    ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, '(', 'R5', outputList)
+                s, IList, NList, SList, counterI, counterN, outputList = \
+                    ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, ')', 'R6', outputList)
+                s, IList, NList, SList, counterI, counterN, outputList = \
+                    ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, '[', 'R7', outputList)
+                s, IList, NList, SList, counterI, counterN, outputList = \
+                    ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, ']', 'R8', outputList)
+                s, IList, NList, SList, counterI, counterN, outputList = \
+                    ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, '{', 'R9', outputList)
+                s, IList, NList, SList, counterI, counterN, outputList = \
+                    ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, '}', 'R10', outputList)
+
+            if j in O:
+                if re.match(isNumberAndSymbol, s) and j == '+':  # проверка + в числах 5.65E+4
+                    s += '+'
+                else:
+                    s, IList, NList, SList, counterI, counterN, outputList = \
+                        ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, '+', 'O0', outputList)
+                if j == '-':  # проверка отрицательных чисел / проверка - в числах 5.65E-4
+                    if re.match(isNumberAndSymbol, i[i.index('-', 0, len(i)) + 1]):
+                        s += '-'
+                    else:
+                        s, IList, NList, SList, counterI, counterN, outputList = \
+                            ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, '-', 'O1', outputList)
+                s, IList, NList, SList, counterI, counterN, outputList = \
+                    ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, '*', 'O2', outputList)
+                s, IList, NList, SList, counterI, counterN, outputList = \
+                    ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, '/', 'O3', outputList)
+                s, IList, NList, SList, counterI, counterN, outputList = \
+                    ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, '^', 'O4', outputList)
+
+                s, IList, NList, SList, counterI, counterN, outputList, wait = \
+                    multiIfRorOthenOutput(i, j, s, wait, IList, NList, SList, counterI, counterN, '<', ['<>', '<='],
+                                          'O5', ['O9', 'O10'],
+                                          outputList)
+
+                s, IList, NList, SList, counterI, counterN, outputList, wait = \
+                    multiIfRorOthenOutput(i, j, s, wait, IList, NList, SList, counterI, counterN, '>', ['>='], 'O6',
+                                          ['O11'], outputList)
+
+                s, IList, NList, SList, counterI, counterN, outputList = \
+                    ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, '=', 'O7', outputList)
+
+            # if i == '\n' and codeList[codeList.index(s, 0, len(codeList)) + 1] == 'else\n':
+            #     print('-------------------- s --------------', s)
+            #     if s != '':
+            #         outputList.append(s)
+
+            if s == '\n' or j == '\n' and s != '':
+                if j == '\n' and s != '':
+                    print('-------------------- s --------------', s)
+                    s, IList, NList, SList, counterI, counterN, outputList = \
+                        ifRorOthenOutput(i, j, s, IList, NList, SList, counterI, counterN, '\n', '', outputList)
+                outputList.append('R11')
+                outputList.append('\n')
+                s = ''
+        else:
+            wait -= 1
+        i = i[1:len(i)]
+
+print(s)
+ex = ''
+for i in range(0, len(outputList)):
+    if outputList[i] != 'R11':
+        if i != len(outputList) - 1:
+            ex += outputList[i] + ' '
+        else:
+            ex += outputList[i]
+    else:
+        ex += outputList[i] + ' '
+
+answer = open('answer.txt', 'w')
+answer.write(ex)
+answer.close()
+outputList = list(ex.split(' '))
+
+print()
+print('IList  ', IList)
+print('NList  ', NList)
+print('SList  ', SList)
+print()
+print('Вход:  ', codeList)
+print('Выход: ', outputList)
+print('Ответ: ', inputList)
+if outputList == inputList:
+    print('True')
+else:
+    print('False')
+
+mistakes = []
+for i in range(0, len(outputList)):
+    if len(outputList) > len(inputList):
+        min = len(inputList)
+    else:
+        min = len(outputList)
+
+    if i < min:
+        if outputList[i] != inputList[i]:
+            st = '[' + outputList[i] + ' , ' + str(i) + ']'
+            mistakes.append(st)
+if len(mistakes) != 0:
+    print('Ошибки:', mistakes)

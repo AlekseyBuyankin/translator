@@ -1,0 +1,752 @@
+from PyQt5 import QtWidgets, QtCore, QtGui
+from rpn_to_java import Ui_MainWindow
+import sys
+import re
+import string
+
+
+class movenment(QtWidgets.QMainWindow):
+    def __init__(self):
+        pass
+
+    def center(self):
+        desktop = QtWidgets.QDesktopWidget()
+        rect = desktop.availableGeometry(desktop.primaryScreen())  # прямоугольник с размерами экрана
+        center = rect.center()
+        center.setX(center.x() - (self.width() / 2))
+        center.setY(center.y() - (self.height() / 2))
+        self.move(center)
+
+
+class mainMenu(QtWidgets.QMainWindow):
+    def __init__(self, allDict):
+        super(mainMenu, self).__init__()
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        self.allDict = allDict
+        self.rpn_string = self.allDict['rpn_string']
+        self.java_string = self.allDict['java_string']
+
+        movenment.center(self)
+
+        self.ui.rpnPlainText.setStyleSheet(
+            'border-radius: 5px; background-color: rgb(221, 236, 255); font: 18px;')
+        self.ui.javaPlainText.setStyleSheet(
+            'border-radius: 5px; background-color: rgb(221, 236, 255); font: 18px;')
+        self.ui.startButton.setStyleSheet(
+            'border-radius: 5px; background-color: rgb(221, 236, 255); font: 18px;')
+        self.ui.putCodeFromProgButton.setStyleSheet(
+            'border-radius: 5px; background-color: rgb(221, 236, 255); font: 18px;')
+
+        self.ui.startButton.clicked.connect(self.btnStart)
+        self.ui.putCodeFromProgButton.clicked.connect(self.btnCode)
+
+    def btnStart(self):
+        self.rpn_string = self.ui.rpnPlainText.toPlainText()
+        rpnToJava.mainProgram(self)
+        self.ui.javaPlainText.setPlainText(self.java_string)
+
+    def btnCode(self):
+        rpnToJava.mainProgram(self)
+
+        self.ui.rpnPlainText.setPlainText(self.rpn_string)
+
+        self.ui.javaPlainText.setPlainText(self.java_string)
+
+
+class rpnToJava:
+    def __init__(self, allDict):
+        self.allDict = allDict
+        self.rpn_string = self.allDict['rpn_string']
+        self.java_string = self.allDict['java_string']
+        self.sDict = self.allDict['sDict']
+        self.nDict = self.allDict['nDict']
+        self.iDict = self.allDict['iDict']
+        self.pList = self.allDict['pList']
+        self.fList = self.allDict['fList']
+
+    def mainProgram(self):
+        if self.rpn_string == '':
+            self.rpn_string = '''S0 W0 
+I0 N0 O7 W2 
+I1 I2 R3 N0 2 W3 W7 КО 
+I3 НОП I4 I5 R3 2 W3 КО I6 I7 R3 2 W5 КО 
+НП 
+I8 R3 W3 КО 
+I7 S1 O8 КП 
+НТ 
+I5 N2 2АЭМ N3 O8 
+I5 N2 2АЭМ N4 O6 3 M1 УПЛ 
+I7 S2 O8 M2 БП M1 R3 
+I3 I4 I5 I6 I7 П M2 R3 
+КТ'''  # 1й
+            self.rpn_string = '''S0 W0 
+I0 N0 O7 I1 N1 O7 W2 
+I2 R3 N0 W4 W7 КО I3 I4 I5 R3 2 W3 КО 
+I6 НОФ I7 I8 R3 N0 N3 2 W3 W7 КО I9 I10 R3 2 W5 КО I11 R3 W4 КО R3 W3 
+НФ 
+I12 R3 W5 КО 
+I11 N4 O7 2 M1 УПЛ 
+I12 S1 O8 
+I9 I3 O8 M2 БП M1 R3 
+I9 I7 N5 N6 3АЭМ O8 M2 R3 
+I6 I9 O8 
+КФ 
+I13 НОП I14 R3 W3 КО 
+НП 
+I5 N2 I2 O0 O8 3 N6 НФР 
+I5 N5 O7 2 M1 УПЛ 
+I3 I3 I14 O0 O8 M2 БП M1 R3 
+I3 I3 I14 O1 O8 M2 R3 КФР КП 
+НТ 
+I3 N2 O8 
+I13 N6 П I3 N7 O5 2 M1 УПЛ 
+I4 N8 O8 I13 I4 П M1 R3 
+I3 N9 O6 2 M1 УПЛ 
+I13 I3 П 
+КТ 2'''  # 2й
+
+            self.allDict['rpn_string'] = self.rpn_string
+
+        sString = '''S0   hello
+S1   LHS
+S2  VHS'''  # 1й
+        sString = '''S0   test
+S1  Hello'''  # 2й
+
+        nString = '''N0   10
+N1   1
+N2   2
+N3   5.65E+4
+N4  6'''  # 1й
+        nString = '''N0   10
+N1   12.53E+4
+N2   1
+N3   23
+N4   2.46
+N5   3
+N6   5
+N7   0
+N8   4
+N9  -5'''  # 2й
+
+        iString = '''I0   N
+I1   a
+I2   b
+I3   pepega
+I4   e
+I5   z
+I6   x
+I7   m
+I8  zz'''  # 1й
+        iString = '''I0   n
+I1   N
+I2   a
+I3   hg
+I4   jh
+I5   i
+I6   pepega
+I7   z
+I8   b
+I9   zz
+I10  mm
+I11  aaa
+I12  fgh
+I13  pepe
+I14  qw'''  # 2й
+
+        self.sDict = rpnToJava.converter(self, sString)
+        self.nDict = rpnToJava.converter(self, nString)
+        self.iDict = rpnToJava.converter(self, iString)
+        self.allDict['sDict'] = self.sDict
+        self.allDict['nDict'] = self.nDict
+        self.allDict['iDict'] = self.iDict
+
+        self.pList = ['I3']  # 1й
+        self.pList = ['I13']  # 2й
+
+        self.fList = []  # 1й
+        self.fList = ['I6']  # 2й
+
+        self.allDict['pList'] = self.pList
+        self.allDict['fList'] = self.fList
+
+        rpn_List = ''
+        for i in self.rpn_string:
+            if i != '\n':
+                rpn_List += i
+        input_rpn_List = list(rpn_List.split(' '))
+        specialWord = ['W0', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12', 'W13', 'W14',
+                       'W15', 'W16', 'W17', 'W18', 'W19', 'W20', 'W21', 'НТ', 'КТ', 'КО', 'НФ', 'КФ', 'НП', 'КП', 'НОП',
+                       'НОФ', 'НФР', 'КФР', 'НВЛ', 'КВЛ', 'П', 'Ф']
+        separators = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'УПЛ', 'БП']
+        operators = ['O0', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O7', 'O8', 'O9', 'O10', '2АЭМ', '3АЭМ']
+
+        isNumber = '[0-9]'.format(re.escape(string.punctuation))
+
+        outputList = []
+        stack = []
+        operandStack = []
+        dStack = {}
+        types = []
+        funcList = []
+
+        isClass = False
+        isMain = False
+        isArray = False
+        isProc = False
+        isFunc = False
+        isIf = False
+        isElse = False
+        isNOPFwas = False
+        isPFnameinOP = False
+        procName = ''
+        funcName = ''
+        lvlCounter = 0
+        tab = ''
+        rNum = 0
+        currentPrior = 0
+        rememberedPrior = 0
+
+        place = 0
+        for i in input_rpn_List:
+            if i not in specialWord and separators and operators:
+                if rememberedPrior != 0:
+                    rememberedPrior = 0
+                if isPFnameinOP and not isNOPFwas:
+                    isPFnameinOP = False
+                    outputList.append(tab)
+                    outputList.append(operandStack[0])
+                    outputList.append('(')
+                    del operandStack[-1]
+
+                if isNOPFwas:
+                    isNOPFwas = False
+                if i in self.sDict:
+                    operandStack.append(self.sDict[i])
+                if i in self.nDict:
+                    operandStack.append(self.nDict[i])
+                if i in self.iDict:
+                    operandStack.append(self.iDict[i])
+
+                if i in self.pList:
+                    if not isPFnameinOP:
+                        isPFnameinOP = True
+
+                if i in self.fList:
+                    if i not in funcList:
+                        funcList.append(i)
+                        if not isPFnameinOP:
+                            isPFnameinOP = True
+
+                if i == 'M1' and not isElse:
+                    isIf = True
+                if i == 'M2' and not isElse:
+                    isElse = True
+
+            if i in specialWord:
+                # program - class
+                if i == 'W0':
+                    lvlCounter += 1
+                    outputList.append('class')
+                    outputList.append(operandStack[0])
+                    del operandStack[0]
+                    outputList.append('{')
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+                    isClass = True
+
+                # const - final
+                if i == 'W2':
+                    for key in dStack:
+                        outputList.append(tab)
+                        outputList.append(dStack[key])
+                        outputList.append(';')
+                        del operandStack[-1]
+                    dStack = {}
+                    rNum = 0
+
+                # integer - int
+                if i == 'W3':
+                    types.append('int')
+
+                # real - double
+                if i == 'W4':
+                    types.append('double')
+
+                # string - String
+                if i == 'W5':
+                    types.append('String')
+
+                # array
+                if i == 'W7':
+                    isArray = True
+
+                if i == 'КО':
+                    koString = ''
+                    if isArray:
+                        h = operandStack[0]
+                        del operandStack[0]
+                        br = ''
+                        st = ''
+                        for j in range(0, len(operandStack)):
+                            br += '[]'
+                            st += '[' + operandStack[j] + ']'
+                        koString += types[0] + br + ' ' + h + ' = new ' + types[0] + st
+                        isArray = False
+                    else:
+                        if len(operandStack) != 1:
+                            if isProc or isFunc:
+                                for j in operandStack:
+                                    koString += types[0] + ' ' + j + ', '
+                                koString = koString[0: len(koString) - 2]
+                            else:
+                                koString += types[0] + ' ' + operandStack[0] + ' = ' + operandStack[1]
+                        else:
+                            koString += types[0] + ' ' + operandStack[0]
+                    operandStack = []
+                    types = []
+                    if not isProc and not isFunc:
+                        outputList.append(tab)
+                        outputList.append(koString)
+                        outputList.append(';')
+                    else:
+                        stack.append(koString)
+                        stack.append(', ')
+
+                if i == 'НОП':
+                    isPFnameinOP = False
+                    isPFnameinOP = False
+                    isNOPFwas = True
+                    isProc = True
+                    stack.append(tab)
+                    stack.append('public static void')
+                    stack.append(operandStack[0])
+                    stack.append('(')
+                    operandStack = []
+
+                if i == 'НОФ':
+                    isPFnameinOP = False
+                    isPFnameinOP = False
+                    isNOPFwas = True
+                    isFunc = True
+                    stack.append(tab)
+                    stack.append('public static void')
+                    stack.append(operandStack[0])
+                    stack.append('(')
+                    operandStack = []
+
+                if i == 'НП':
+                    isProc = False
+                    isMain = True
+                    for j in stack:
+                        outputList.append(j)
+                    if outputList[-1] != '(':
+                        del outputList[-1]
+                    outputList.append(')')
+                    outputList.append('{')
+                    stack = []
+                    lvlCounter += 1
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+
+                if i == 'НФ':
+                    isFunc = False
+                    isMain = True
+                    for j in stack:
+                        outputList.append(j)
+                    if outputList[-1] != '(':
+                        del outputList[-1]
+                    outputList.append(')')
+                    outputList.append('{')
+                    stack = []
+                    lvlCounter += 1
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+
+                if i == 'КП' or i == 'КФ':
+                    isMain = False
+                    print(dStack)
+                    for key in dStack:
+                        outputList.append(tab)
+                        outputList.append(dStack[key])
+                        outputList.append(';')
+                        del operandStack[-1]
+                    dStack = {}
+                    rNum = 0
+                    lvlCounter -= 1
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+                    outputList.append(tab)
+                    outputList.append('}')
+
+                if i == 'НТ':
+                    isMain = True
+                    lvlCounter += 1
+                    outputList.append(tab + 'public static void main(String[] args)')
+                    outputList.append('{')
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+
+                if i == 'КТ':
+                    isMain = False
+                    lvlCounter -= 1
+                    if lvlCounter != 0:
+                        tab = rpnToJava.tabCalc(self, lvlCounter)
+                    else:
+                        tab = ''
+                    outputList.append(tab[0: len(tab) - 1])
+                    outputList.append('}')
+
+                    if isClass:
+                        outputList.append('}')
+                        lvlCounter = 0
+                        tab = ''
+
+                if i == 'П' or i == 'Ф':
+                    for j in operandStack:
+                        outputList.append(j)
+                        outputList.append(', ')
+
+                    del outputList[-1]
+                    outputList.append(')')
+                    outputList.append(';')
+                    operandStack = []
+
+                if i == 'НФР':
+                    outputList.append(tab)
+                    outputList.append('for ')
+                    outputList.append('(')
+                    outputList.append(operandStack[0])
+                    outputList.append('=')
+                    if len(dStack.values()) == 1:
+                        outputList.append(dStack['R1'])
+                    else:
+                        keyCounter = 0
+                        for key in dStack:
+                            keyCounter += 1
+                            if keyCounter <= len(dStack) - 1:
+                                k = 'R' + str(keyCounter)
+                                k2 = 'R' + str(keyCounter + 1)
+                                if key in dStack[k2]:
+                                    dStack[k2] = dStack[k2].replace(key, dStack[key])
+                        outputList.append(dStack[k2])
+                    dStack = {}
+                    rNum = 0
+
+                    outputList.append(', ')
+                    outputList.append(operandStack[0])
+                    outputList.append('<')
+                    outputList.append(operandStack[-1])
+                    outputList.append(', ')
+                    outputList.append(operandStack[0] + '++')
+                    outputList.append(')')
+                    outputList.append('{')
+                    lvlCounter += 1
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+
+                if i == 'КФР':
+                    lvlCounter -= 1
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+                    outputList.append(tab)
+                    outputList.append('}')
+
+                if i == 'НВЛ':
+                    outputList.append(tab)
+                    outputList.append('while ')
+                    outputList.append('(')
+                    if len(dStack.values()) == 1:
+                        outputList.append(dStack['R1'])
+                    else:
+                        keyCounter = 0
+                        for key in dStack:
+                            keyCounter += 1
+                            if keyCounter <= len(dStack) - 1:
+                                k = 'R' + str(keyCounter)
+                                k2 = 'R' + str(keyCounter + 1)
+                                if key in dStack[k2]:
+                                    dStack[k2] = dStack[k2].replace(key, dStack[key])
+                        outputList.append(dStack[k2])
+                    dStack = {}
+                    rNum = 0
+
+                    outputList.append(')')
+                    outputList.append('{')
+                    lvlCounter += 1
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+
+                if i == 'КВЛ':
+                    lvlCounter -= 1
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+                    outputList.append(tab)
+                    outputList.append('}')
+
+            if i in operators:
+                rNum, operandStack, dStack, rememberedPrior = rpnToJava.func4operations \
+                    (self, i, rNum, operandStack, dStack, 'O0', ' + ', isMain, 7, rememberedPrior)
+                rNum, operandStack, dStack, rememberedPrior = rpnToJava.func4operations \
+                    (self, i, rNum, operandStack, dStack, 'O1', ' - ', isMain, 7, rememberedPrior)
+                rNum, operandStack, dStack, rememberedPrior = rpnToJava.func4operations \
+                    (self, i, rNum, operandStack, dStack, 'O2', ' * ', isMain, 8, rememberedPrior)
+                rNum, operandStack, dStack, rememberedPrior = rpnToJava.func4operations \
+                    (self, i, rNum, operandStack, dStack, 'O3', ' / ', isMain, 8, rememberedPrior)
+                rNum, operandStack, dStack, rememberedPrior = rpnToJava.func4operations \
+                    (self, i, rNum, operandStack, dStack, 'O4', ' ^ ', isMain, 9, rememberedPrior)
+                rNum, operandStack, dStack, rememberedPrior = rpnToJava.func4operations \
+                    (self, i, rNum, operandStack, dStack, 'O5', ' < ', isMain, 5, rememberedPrior)
+                rNum, operandStack, dStack, rememberedPrior = rpnToJava.func4operations \
+                    (self, i, rNum, operandStack, dStack, 'O6', ' > ', isMain, 5, rememberedPrior)
+                rNum, operandStack, dStack, rememberedPrior = rpnToJava.func4operations \
+                    (self, i, rNum, operandStack, dStack, 'O7', ' = ', isMain, 5, rememberedPrior)
+                rNum, operandStack, dStack, rememberedPrior = rpnToJava.func4operations \
+                    (self, i, rNum, operandStack, dStack, 'O9', ' != ', isMain, 5, rememberedPrior)
+                rNum, operandStack, dStack, rememberedPrior = rpnToJava.func4operations \
+                    (self, i, rNum, operandStack, dStack, 'O10', ' <= ', isMain, 5, rememberedPrior)
+                rNum, operandStack, dStack, rememberedPrior = rpnToJava.func4operations \
+                    (self, i, rNum, operandStack, dStack, 'O11', ' >= ', isMain, 5, rememberedPrior)
+
+                # :=
+                if i == 'O8':
+                    if place != len(input_rpn_List) - 1:
+                        if not re.match(isNumber, input_rpn_List[place + 1]):  # чтобы работал for
+                            rNum += 1
+                            r = rpnToJava.operationReplacement(self, operandStack, ' := ', isMain, 10, rememberedPrior)
+                            del operandStack[-1]
+                            del operandStack[-1]
+                            dStack['R' + str(rNum)] = r
+                            outputList.append(tab)
+                            if len(dStack.values()) == 1:
+                                outputList.append(dStack['R1'])
+                                outputList.append(';')
+                            else:
+                                keyCounter = 0
+                                for smth in range(0, len(dStack.values())):
+                                    l = []
+                                    for key in dStack:
+                                        if key in list(dStack.values())[-1]:
+                                            l.append(key)
+                                    if len(l) != 0:
+                                        keyminustwo = list(dStack.keys())[-2]
+                                        if dStack[keyminustwo][0] == '(' and dStack[keyminustwo][-1] == ')':
+                                            dStack[keyminustwo] = dStack[keyminustwo][1:len(dStack[keyminustwo]) - 1]
+                                        for j in l:
+                                            keyminusone = list(dStack.keys())[-1]
+                                            dStack[keyminusone] = dStack[keyminusone].replace(j, dStack[j])
+
+                                outputList.append(list(dStack.values())[-1])
+                                outputList.append(';')
+                            dStack = {}
+                            operandStack = []
+                            rNum = 0
+
+                if i == '2АЭМ':
+                    rNum += 1
+                    r = rpnToJava.aem(self, operandStack, 2)
+                    del operandStack[-1]
+                    del operandStack[-1]
+                    operandStack.append('R' + str(rNum))
+                    dStack['R' + str(rNum)] = r
+
+                if i == '3АЭМ':
+                    rNum += 1
+                    r = rpnToJava.aem(self, operandStack, 3)
+                    del operandStack[-1]
+                    del operandStack[-1]
+                    del operandStack[-1]
+                    operandStack.append('R' + str(rNum))
+                    dStack['R' + str(rNum)] = r
+
+            if i in separators:
+                # :
+                if i == 'R3' and not isElse and not isIf:
+                    if len(operandStack) > 1:
+                        smString = rpnToJava.separatorReplacement(self, operandStack)
+                        operandStack = []
+                        operandStack.append(smString)
+
+                # если неполный условный оператор
+                elif i == 'R3' and isIf and not isElse:
+                    lvlCounter -= 1
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+                    outputList.append(tab)
+                    outputList.append('}')
+
+                # если полный условный оператор
+                elif i == 'R3' and isIf and isElse:
+                    isIf = False
+                    outputList.append(tab)
+                    outputList.append('else')
+                    outputList.append('{')
+                    lvlCounter += 1
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+
+                elif i == 'R3' and not isIf and isElse:
+                    isElse = False
+                    lvlCounter -= 1
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+                    outputList.append(tab)
+                    outputList.append('}')
+
+                if i == 'УПЛ':
+                    outputList.append(tab)
+                    outputList.append('if ')
+                    outputList.append('(')
+
+                    if len(dStack.values()) == 1:
+                        dStack['R1'] = dStack['R1'].replace('=', '==')
+                        outputList.append(dStack['R1'])
+                        outputList.append(')')
+                    else:
+                        keyCounter = 0
+                        for key in dStack:
+                            keyCounter += 1
+                            if keyCounter <= len(dStack) - 1:
+                                k = 'R' + str(keyCounter)
+                                k2 = 'R' + str(keyCounter + 1)
+                                if key in dStack[k2]:
+                                    dStack[k2] = dStack[k2].replace(key, dStack[key])
+                        dStack[k2] = dStack[k2].replace('=', '==')
+                        outputList.append(dStack[k2])
+                        outputList.append(')')
+                    dStack = {}
+                    operandStack = []
+                    dStack = {}
+                    rNum = 0
+
+                    outputList.append('{')
+                    lvlCounter += 1
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+
+                if i == 'БП':
+                    lvlCounter -= 1
+                    tab = rpnToJava.tabCalc(self, lvlCounter)
+                    outputList.append(tab)
+                    outputList.append('}')
+
+            place += 1
+
+        self.java_string = ''
+
+        for i in outputList:
+            if i == '{' or i == '}':
+                self.java_string += i + '\n'
+            elif i == '    ':
+                self.java_string += i
+            elif i == ';':
+                self.java_string = self.java_string[0: len(self.java_string) - 1]
+                self.java_string += i + '\n'
+            elif i == '(' or i == ', ':
+                self.java_string = self.java_string[0: len(self.java_string) - 1]
+                self.java_string += i
+            elif i == ')':
+                if self.java_string[len(self.java_string) - 1] != '(':
+                    self.java_string = self.java_string[0: len(self.java_string) - 1]
+                self.java_string += i + ' '
+            else:
+                self.java_string += i + ' '
+
+        self.allDict['java_string'] = self.java_string
+
+    # конвертирует входные списки строковых и числовых констант и идентификаторы из string в словарь
+    def converter(self, inputString: str):
+        d = {}
+        exLine = list(inputString.split('  '))
+        lexeme = ''
+        for i in exLine:
+            if i != exLine[0] and i != exLine[-1]:
+                if i[0] == ' ':
+                    i = i[1:]
+                op = i[0: i.index('\n', 0, len(i))]
+                if lexeme != '':
+                    d[lexeme] = op
+                lexeme = i[i.index('\n', 0, len(i)) + 1: len(i)]
+            elif i == exLine[0]:
+                lexeme = i
+            elif i == exLine[-1]:
+                op = i
+                d[lexeme] = op
+
+        return d
+
+    # вычисляет tab
+    def tabCalc(self, lvlCounter):
+        tabString = '    '
+
+        newTab = ''
+        for i in range(0, lvlCounter):
+            newTab += tabString
+
+        return newTab
+
+    # замена двух крайних операндов и операции на R%num%
+    def operationReplacement(self, operandList: list, operation: str, isMain, currentPrior, remeberedPrior):
+        i1 = operandList[-2]
+        i2 = operandList[-1]
+        if i2 in self.sDict.values():
+            i2 = '"' + i2 + '"'
+
+        if operation == ' := ':
+            operation = ' = '
+
+        r = ''
+        if not isMain:
+            if i2 in self.nDict.values():
+                if isinstance(i2, float):
+                    r = 'final double '
+                else:
+                    if str(i2).find('E', 0, len(str(i2))) != -1:
+                        r = 'final double '
+                    else:
+                        r = 'final int '
+            if i2 in self.sDict:
+                r = 'final String '
+                isString = True
+
+        if currentPrior != 10 and remeberedPrior != 0:
+            if remeberedPrior < currentPrior:
+                r += '(' + i1 + operation + i2 + ')'
+            else:
+                r += i1 + operation + i2
+        else:
+            r += i1 + operation + i2
+        return r
+
+    def func4operations(self, i, rNum, operandStack, dStack, inputString,
+                        outputString, isMain, currentPrior, rememberedPrior):
+        if i == inputString:
+            rNum += 1
+            r = rpnToJava.operationReplacement(self, operandStack, outputString, isMain, currentPrior, rememberedPrior)
+            rememberedPrior = currentPrior
+            del operandStack[-1]
+            del operandStack[-1]
+            operandStack.append('R' + str(rNum))
+            dStack['R' + str(rNum)] = r
+
+        return rNum, operandStack, dStack, rememberedPrior
+
+    def separatorReplacement(self, operandList: list):
+        st = ''
+        for i in range(0, len(operandList) - 1):
+            st += operandList[i] + ', '
+        st += operandList[-1]
+
+        return st
+
+    def aem(self, operandList: list, num: int):
+        r = ''
+        if num == 2:
+            i1 = operandList[-2]
+            i2 = operandList[-1]
+            r += i1 + '[' + i2 + ']'
+        else:
+            i1 = operandList[-3]
+            i2 = operandList[-2]
+            i3 = operandList[-1]
+            r += i1 + '[' + i2 + ',' + i3 + ']'
+        return r
+
+
+if __name__ == '__main__':
+    allDict = {'rpn_string': '', 'java_string': '',
+               'sDict': {}, 'nDict': {}, 'iDict': {},
+               'pList': [], 'fList': []}
+    app = QtWidgets.QApplication([])
+    application = mainMenu(allDict)
+    application.show()
+
+    sys.exit(app.exec())
